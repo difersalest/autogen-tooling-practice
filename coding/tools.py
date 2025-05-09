@@ -164,7 +164,6 @@ def wordcloud(text: str = None):
         max_font_size=80,
         width=800,
         height=400,
-        colormap=colormap,
         prefer_horizontal=0.9,
         relative_scaling=0.5,
         random_state=42
