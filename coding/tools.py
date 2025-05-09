@@ -3,6 +3,8 @@ import pandas as pd
 from coding.constant import TEXTBOOK_LIST, EXPERTS_LIST
 from typing import Optional, List
 import streamlit as st
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud
 
 def fetch_news_json(page_idx: int, list_type: str = 'all') -> dict:
     if list_type == 'all':  
@@ -154,3 +156,22 @@ def search_textbook(title: str = None,
             (related_expert and related_expert.lower() in tb["RELATED_EXPERT"].lower())):
             results.append(tb)
     return results or [{"error": "No matching textbooks found."}]
+
+def wordcloud(text: str = None):
+    wc = WordCloud(
+        background_color="white",
+        max_words=100,
+        max_font_size=80,
+        width=800,
+        height=400,
+        colormap=colormap,
+        prefer_horizontal=0.9,
+        relative_scaling=0.5,
+        random_state=42
+    ).generate(text)
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.imshow(wc, interpolation='bilinear')
+    ax.axis("off")
+    plt.tight_layout(pad=0)
+    return fig
