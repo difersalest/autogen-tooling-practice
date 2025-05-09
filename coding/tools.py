@@ -174,3 +174,21 @@ def wordcloud(text: str = None):
     ax.axis("off")
     plt.tight_layout(pad=0)
     return fig
+
+# def wordcloud(text: str = None):
+#     wc = WordCloud(
+#         background_color="white",
+#         max_words=100,
+#         max_font_size=80,
+#         width=800,
+#         height=400,
+#         prefer_horizontal=0.9,
+#         relative_scaling=0.5,
+#         random_state=42
+#     ).generate(text)
+    
+#     fig, ax = plt.subplots(figsize=(10, 6))
+#     ax.imshow(wc, interpolation='bilinear')
+#     ax.axis("off")
+#     plt.tight_layout(pad=0)
+#     return fig

@@ -1,5 +1,5 @@
 from typing import List, Dict, Optional, Any, Annotated
-from coding.tools import search_expert, search_textbook, search_news, fetch_all_news
+from coding.tools import search_expert, search_textbook, search_news, fetch_all_news, wordcloud
 from datetime import datetime
 import streamlit as st
 
@@ -27,8 +27,7 @@ def AG_search_expert(
 def AG_search_textbook(
     title: Annotated[Optional[str], "Textbook title."] = None,
     discipline: Annotated[Optional[List[str]], "List of input strings containing disciplines to filter by."] = None,
-    related_expert: Annotated[Optional[List[str]], "List of input strings containing related expert names to filter by."] = None
-):
+    related_expert: Annotated[Optional[List[str]], "List of input strings containing related expert names to filter by."] = None):
     """
     Wrapper around search_textbook that accepts lists for discipline and related_expert.
     """
@@ -41,6 +40,29 @@ def AG_search_textbook(
         matched = search_textbook(title=title)
     unique = {tb["TITLE"]: tb for tb in matched if "TITLE" in tb}
     return list(unique.values())
+
+def AG_make_wordcloud(
+    text: Annotated[str, "Text to generate wordcloud from."]
+):
+    """
+    Generate a wordcloud visualization from the input text.
+    
+    Args:
+        text (str): The text to create a wordcloud from
+        
+    Returns:
+        A matplotlib figure containing the wordcloud visualization
+    """
+    if not isinstance(text, str):
+        return "Error: Input must be a string"
+    
+    # Generate wordcloud
+    fig = wordcloud(text)
+    
+    # Show the wordcloud in Streamlit
+    st.pyplot(fig)
+    
+    return "Wordcloud generated successfully! ##ALL DONE##"
 
 def AG_search_news(
     query: Annotated[
@@ -98,3 +120,4 @@ def get_time() -> str:
             current_time = "2024-10-01 12:00:00"
 
         return f"Current time in your location: {current_time}"
+

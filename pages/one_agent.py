@@ -12,7 +12,7 @@ from autogen import AssistantAgent, UserProxyAgent, LLMConfig, register_function
 from autogen.code_utils import content_str
 from coding.constant import JOB_DEFINITION, RESPONSE_FORMAT
 from coding.utils import show_chat_history, display_session_msg, save_messages_to_json, paging
-from coding.agenttools import AG_search_expert, AG_search_news, AG_search_textbook, get_time
+from coding.agenttools import AG_search_expert, AG_search_news, AG_search_textbook, get_time, AG_make_wordcloud
 
 # Load environment variables from .env file
 load_dotenv(override=True)
@@ -28,15 +28,15 @@ user_image = "https://www.w3schools.com/howto/img_avatar.png"
 
 seed = 42
 
-llm_config_gemini = LLMConfig(
-    api_type = "google", 
-    model="gemini-2.0-flash", # The specific model
-    api_key=GEMINI_API_KEY,   # Authentication
-)
+# llm_config_gemini = LLMConfig(
+#     api_type = "google", 
+#     model="gemini-2.0-flash", # The specific model
+#     api_key=GEMINI_API_KEY,   # Authentication
+# )
 
 llm_config_openai = LLMConfig(
     api_type = "openai", 
-    model="gpt-4o-mini",    # The specific model
+    model="gpt-4.1-nano",    # The specific model
     api_key=OPEN_API_KEY,   # Authentication
 )
 
@@ -84,32 +84,21 @@ def main():
 
     student_persona = f"""You are a student willing to learn. After your result, say 'ALL DONE'. Please output in {lang_setting}"""
 
-    teacher_persona = f"""You are a teacher. Please try to use tools to answer student's question according to the following rules:
-    1. Check current time: use `get_time` tool to retrieve current date and time.
-    2. Search news by `AG_search_news` according to user's question, try to distill student's question within 1~2 words and facilitate it as query string. Also you may search by sections,  e.g. ['Taiwan News', 'World News', 'Sports', 'Front Page', 'Features', 'Editorials', 'Business','Bilingual Pages'], if you cannot distill it, use None instead. 
-    3. From the return news, randomly pick one news. Classify the news to the following <DISCIPLINE>:
-    <DISCIPLINE>
-        "Digital Sociology"
-        "Information Systems Strategy"
-        "Technology and Society"
-        "Empathetic and research-driven"
-        "Computational Social Science"
-    </DISCIPLINE>
-    4. Use `AG_search_expert` to select expert by <DISCIPLINE>, also Use `AG_search_textbook` to select a textbook by <DISCIPLINE>.
-    5. Explain to student a interesting essay within 500 words about the news using expert and textbook. Please remember to mention about the expert and textbook you cite.
+    # FOR HW12
+    teacher_persona = f"""
+    You are an expert in creating wordcloud visualizations from text.
+    When you receive input text, follow these steps precisely:
+    1. Call the AG_make_wordcloud tool with the input text
+    2. Wait for the result from the tool
+    3. Respond with: "I've created a wordcloud visualization from your text!"
+    4. End your message with "##ALL DONE##"
 
-    6. Fallback & Termination  
-        – On successful completion or when ending, return '##ALL DONE##'.  
-        - Return '##ALL DONE##' and respond accordingly when:
-            • The task is completed.
-            • The input is empty.
-            • An error occurs.
-            • The request is repeated.
-            • Additional confirmation is required from the user.
-    7. Please output in {lang_setting}
+    If you receive an empty input, ask for text to create a wordcloud from.
+    Please output in {lang_setting}
     """
-    with llm_config_openai:
+
     # with llm_config_gemini:
+    with llm_config_openai:
         teacher_agent = ConversableAgent(
             name="Student_Agent",
             system_message=teacher_persona,
@@ -117,8 +106,8 @@ def main():
 
     user_proxy = UserProxyAgent(
         "user_proxy",
-        human_input_mode="NEVER",
-        code_execution_config=False,
+        human_input_mode="NEVER",  # Add this line to prevent waiting for human input
+        code_execution_config={"use_docker": False},
         is_termination_msg=lambda x: content_str(x.get("content")).find("##ALL DONE##") >= 0,
     )
 
@@ -128,23 +117,27 @@ def main():
             proxy.register_for_execution(name=name)(func)
 
     methods_to_register = [
-        ("get_time", "Retrieve the current date and time.", get_time),
-        ("AG_search_expert", "Search EXPERTS_LIST by name, discipline, or interest.", AG_search_expert),
-        ("AG_search_textbook", "Search TEXTBOOK_LIST by title, discipline, or related_expert.", AG_search_textbook),
-        ("AG_search_news", "Search a pre-fetched news DataFrame by keywords, sections, and date range.", AG_search_news),
+        ("AG_make_wordcloud", "Generate a wordcloud visualization from text", AG_make_wordcloud),
+        # ("AG_search_expert", "Search EXPERTS_LIST by name, discipline, or interest.", AG_search_expert),
+        # ("AG_search_textbook", "Search TEXTBOOK_LIST by title, discipline, or related_expert.", AG_search_textbook),
+        # ("AG_search_news", "Search a pre-fetched news DataFrame by keywords, sections, and date range.", AG_search_news),
     ]
 
     # Register all methods using the helper function
     register_agent_methods(teacher_agent, user_proxy, methods_to_register)
 
     def generate_response(prompt):
+        # Add check for empty prompt
+        if not prompt or prompt.strip() == "":
+            return [{"role": "user", "content": ""},
+                    {"role": "assistant", "content": "Please provide some text that you'd like me to convert to uppercase. ##ALL DONE##"}]
+            
         chat_result = user_proxy.initiate_chat(
             teacher_agent,
-            message = prompt,
+            message=prompt,
         )
 
         response = chat_result.chat_history
-        # st.write(response)
         return response
 
     def chat(prompt: str):

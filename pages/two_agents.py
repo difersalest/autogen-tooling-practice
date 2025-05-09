@@ -12,7 +12,7 @@ from autogen import AssistantAgent, UserProxyAgent, LLMConfig, register_function
 from autogen.code_utils import content_str
 from coding.constant import JOB_DEFINITION, RESPONSE_FORMAT
 from coding.utils import show_chat_history, display_session_msg, save_messages_to_json, paging
-from coding.agenttools import AG_search_expert, AG_search_news, AG_search_textbook, get_time
+from coding.agenttools import AG_search_expert, AG_search_news, AG_search_textbook, get_time, AG_make_wordcloud
 
 # Load environment variables from .env file
 load_dotenv(override=True)
